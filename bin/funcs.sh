@@ -57,18 +57,27 @@ function check_dir() {
 }
 #usage purge_date "${MC_LIST}"
 function purge_data(){
-	local mc_list="$1"	
-	cmd="echo 3 >/proc/sys/vm/drop_caches"; 
-	#echo ${mc_list}
-	for nn in ${mc_list}; do 
-	#echo $nn
-	ssh  -t $nn "sudo sh -c \"$cmd\""; 
-	done;
-	echo "date purged on ${mc_list}"
+    local mc_list="$1"	
+    cmd="echo 3 >/proc/sys/vm/drop_caches"
+    if [ -z "$mc_list" ]; then
+        # drop caches on workers
+        for nn in ${mc_list}; do 
+            #echo $nn
+            ssh  -t $nn "sudo sh -c \"$cmd\""
+        done
+    else
+        # drop caches on local (standalone)
+        sudo sh -c "$cmd"
+    fi
+    echo "date purged on ${mc_list}"
 }
 function get_start_ts() {
-   ts=`ssh ${master} "date +%F-%T"`
-   echo $ts
+    if [ -z ${master} ]; then
+        ts=`date +%F-%T`
+    else
+        ts=`ssh ${master} "date +%F-%T"`
+    fi
+    echo $ts
 }
 function setup(){
   if [ "${MASTER}" = "spark" ] && [ "${RESTART}" = "TRUE" ] ; then
